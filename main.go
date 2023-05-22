@@ -7,6 +7,7 @@ import (
 
 func main() {
 	t := mustToken()
+
 	//token = flags.fet(token)
 
 	//tgClient = telegram.New(token)
@@ -20,9 +21,9 @@ func main() {
 
 func mustToken() string {
 	token := flag.String(
-		name: "token-bot-token",
-		value: "",
-		usage: "token for access to telegram bot",
+		"token-bot-token",
+		"",
+		"token for access to telegram bot",
 	)
 
 	flag.Parse()
