@@ -14,8 +14,10 @@ func main() {
 	// получает сообщения которые ему пишут и отправляет собственные
 	tgClient = telegram.New(tgBotHost, mustToken())
 	
+	//интерфейс фетчер
 	//fetcher = fetcher.New()
 
+	//интерефейс процессор
 	//prcessor = prcessor.New()
 
 	//consumer.Strart(fetcher, processor)
