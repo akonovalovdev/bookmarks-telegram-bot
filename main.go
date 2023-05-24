@@ -1,26 +1,40 @@
 package main
 
 import (
-	"fmt"
-	"net/http"
+	"flag"
+	"log"
 )
 
-func homePage(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Home page")
-}
-
-func contactsPage(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Contacts page")
-}
-
-func handleRequest() {
-	http.HandleFunc("/", homePage)
-	http.HandleFunc("/contacts/", contactsPage)
-	http.ListenAndServe(":8080", nil)
-
-}
+const (
+	tgBotHost = "api.telegram.org"
+)
 
 func main() {
-	handleRequest()
+	//создаём телеграм клиент(клиент который общаяется с телеграмом): (тип Client и его методы реализованы в файле telegram.go в папке client)
+	// получает сообщения которые ему пишут и отправляет собственные
+	tgClient = telegram.New(tgBotHost, mustToken())
+	
+	//интерфейс фетчер
+	//fetcher = fetcher.New()
 
+	//интерефейс процессор
+	//prcessor = prcessor.New()
+
+	//consumer.Strart(fetcher, processor)
+}
+
+func mustToken() string {
+	token := flag.String(
+		"token-bot-token",
+		"",
+		"token for access to telegram bot",
+	)
+
+	flag.Parse()
+
+	if *token == "" {
+		log.Fatal("token is not specified")
+	}
+
+	return *token
 }
