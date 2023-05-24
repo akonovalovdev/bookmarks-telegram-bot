@@ -3,6 +3,8 @@ package telegram
 import (
 	"github.com/akonovalovdev/server/storage"
 	"github.com/akonovalovdev/server/clients/telegram"
+	"github.com/akonovalovdev/server/lib/e"
+	"github.com/akonovalovdev/server/events"
 )
 
 //Один единственный тип данных, который будет реализовывать оба интерфейса Fetcher и Processor
@@ -17,6 +19,8 @@ type Meta struct {
 	ChatID int
 	Username string
 }
+
+var ErrUnknownEventType = errors.New("unknown event type")
  
 //функция которая создаёт тип процессор
 func New(client *telegramm.Client, storage storage.Storage) *Processor{
@@ -50,7 +54,7 @@ func (p Processor) Fetch(limit int) ([]events.Event, error) {
 
 	//теперь обходим все апдейты и преобразовать их в эвенты
 	for _, u := range update {
-		//для преобразования напишием локю функцию event
+		//для преобразования напишием локальную функцию event
 		res = append(res, event(u))
 	}
 
@@ -62,6 +66,34 @@ func (p Processor) Fetch(limit int) ([]events.Event, error) {
 
 	return res, nil
 }
+
+//Метод будет выполнять различные действия в зависимости от типа эвента
+func (p Processor) Process(event events.Event) error {
+	/*
+	//сначала нужно получить все апдэйты(используя внутренний оффсет и лимит из аргумента)
+	updates, err := p.tg.Updates(p.offset, limit) 
+	if err != nil {
+		return nil, e.Wrap("can't get events", err)
+	}
+	//возвращаем нулевой результат, если апдейтов мы не нашли
+	if len(updates) == 0 {
+		return nil, nil
+	}
+	*/
+
+	//будет всего 2 возможных кейса(если в будущем придётся работать с другими апдэйтами телеги, добавим другой кейс)
+	switch event.Type {
+	case event.Message: //работаем с сообщением
+		p.Processmessage(event) //выносим всю логику работы с сообщением в отдельную функцию принимающую на вход Event
+	default: //когда не знаем с чем работаем
+		return e.Wrap("can't process message", ErrUnknownEventType)
+	}
+
+	func (p Processor) processMessage(event events.Event) error {
+		//для работы с этим методом необходимо получить meta
+		meta, err := meta(event) //процесс получения meta выносим в отдельную функцию
+	}
+
 
 	func event(upd telegram.Update) events.Event {
 		//выносим тип события в отдельную переменную
