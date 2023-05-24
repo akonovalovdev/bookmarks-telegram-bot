@@ -10,7 +10,22 @@ type UpdatesResponse struct {
 
 type Update struct {
 	ID int `json:"update_id"`  //update_id  из сервера будут приходить в формате json и стандартный парсер будет искать поле
-	Message string `json:"message"`
+	Message *IncomingMessage `json:"message"`
 }
 
+//отдельный тип для структуры message для входящих(Incoming) сообщений
+type IncomingMessage struct {
+	Text string `json:"text"`
+	From From `json:"from"`
+	Chat Chat `json:"chat"`
+}
 
+//отдельная часть структуры IncomingMessage
+type From struct {
+	Username string `json:"username"`
+}
+
+//отдельная часть структуры IncomingMessage
+type Chat struct {
+	ID int `json:"id"`
+}

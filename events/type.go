@@ -21,4 +21,5 @@ const (
 type Event struct {
 	Type Type //тип события
 	Text string // текст события
+	Meta interface{} //поле позволяющее гибко подгонять дополнительные получаемые поля для разных мессенджеров(у телеграм chatID и username)
 }
