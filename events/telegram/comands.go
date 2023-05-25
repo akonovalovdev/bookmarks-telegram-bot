@@ -1,9 +1,13 @@
 package telegram
 
 import (
+	"net/url"
+	"errors"
 	"log"
 	"strings"
+
 	"github.com/akonovalovdev/server/lib/e"
+	"github.com/akonovalovdev/server/storage"
 )
 
 //выносим ключевые слова по которым будем определять тип команды в отдельные константы
@@ -40,7 +44,7 @@ func (p *Processor) doCmd(text string, chatID int, username string) error {
 	case HelpCmd:
 		return p.sendHelp(chatID) //команда показать подсказку
 	case StartCmd:
-		return p.sendHelp(chatID) //команда приветствия
+		return p.sendHello(chatID) //команда приветствия
 	//дефолтный кейс, когда пользователь отправляет нам непонятно что(неизвестная команда или какой-то текст)
 	default:
 		return p.tg.SendMessage(chatID, msgUnknownCommand) //пишем что не понимаем пользователя
@@ -54,12 +58,12 @@ func (p *Processor) savePage(chatID int, pageURL string, username string) (err e
 
 	//подготавливаем страницу которую собираемся сохранить
 	page := &storage.Page{
-		URL: pageURL,
-		UserName: usrname,
+		Url: pageURL,
+		UserName: username,
 	}
 
 	//Проверяем существует ли такая страница уже
-	IsExists, err := p.storage.IsExists(page)
+	isExists, err := p.storage.IsExists(page) 
 	if err != nil {
 		return err
 	}
@@ -73,14 +77,15 @@ func (p *Processor) savePage(chatID int, pageURL string, username string) (err e
 	}
 
 	//сохраняем страницу
-	if err := p.storage.Save(Page); err != nil {
+	if err := p.storage.Save(page); err != nil {
 		return err
 	}
 
 	//если страница корректно сохранилась, мы сообщаем об этом пользователю
 	if err := p.tg.SendMessage(chatID, msgSaved); err != nil {
+		return err
 	}
-	return err
+	return nil
 }
 
 //метод SendRandom, который будет отправлять пользователю случайную статью
@@ -90,16 +95,16 @@ func (p *Processor) sendRandom(chatID int, username string) (err error) {
 	//ищем случайную статью
 	page, err := p.storage.PickRandom(username) 
 	//обрабатываем обычную но не особую ошибки
-	if err != nil && !errors.Is(err, storage.ErrNoSavedPage){
+	if err != nil && !errors.Is(err, storage.ErrNoSavedPages){
 		return err
 	}
 	//обрабатываем особую ошибку на тот случай если нет сохраннёных ссылок
-	if errors.Is(err, storage.ErrNoSavedPage){
+	if errors.Is(err, storage.ErrNoSavedPages){
 		return p.tg.SendMessage(chatID, msgNoSavedPage)
 	}
 
 	//если же нам удалось что-то найти, то мы отправляем эту ссылку пользователю
-	if err := p.tg.SendMessage(chatID, page.URL); err != nil {
+	if err := p.tg.SendMessage(chatID, page.Url); err != nil {
 		return err
 	}
 
