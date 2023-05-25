@@ -3,6 +3,7 @@ package telegram
 import (
 	"log"
 	"strings"
+	"github.com/akonovalovdev/server/lib/e"
 )
 
 //выносим ключевые слова по которым будем определять тип команды в отдельные константы
@@ -67,8 +68,18 @@ func (p *Processor) savePage(chatID int, pageURL string, username string) (err e
 	Вопрос: разве в предыдущей проверке не было тоже самое??
 	??????????????????????????????????????????????????????????????????????????????????*/
 	if isExists{
-		return p.tg.SendMessage(chatID, ) //выводим сообщение(а все сообщения перенесены в отдельный файл в константы)
+		return p.tg.SendMessage(chatID, msgAlreadyExists) //выводим сообщение(а все сообщения перенесены в отдельный файл Messages.go в константы)
 	}
+
+	//сохраняем страницу
+	if err := p.storage.Save(Page); err != nil {
+		return err
+	}
+
+	//если страница корректно сохранилась, мы сообщаем об этом пользователю
+	if err := p.tg.SendMessage(chatID, msgSaved); err != nil {
+	}
+	return err
 }
 
 //проверяем является ли текст - ссылкой(так как способов проверки много, создаём отдельную функци. чтобы в случае чего изменить способ)
