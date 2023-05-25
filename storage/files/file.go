@@ -20,7 +20,6 @@ type Storage struct {
 
 const defaultPerm = 0774 //Значение по умолчанию - perm(разрешение)
 
-var ErrNoSavedPages = errors.New("no saved pages") // Специальная переменная ошибки, если файлов нет(пользователь пока ничего не сохранил)
 
 //функция которая будет создавать объекты типа Storage
 func New(basePath string) Storage {
@@ -91,7 +90,7 @@ func (s Storage) PickRandom(userName string) (page *storage.Page, err error) {
 
 	//проверяем наличие файлов, если файлов нет, мы вернём заранее определённую ошибку на такие случаи
 	if len(files) == 0 {
-		return nil, ErrNoSavedPages
+		return nil, storage.ErrNoSavedPages
 	}
 
 	//???????????????????????????????????????? что его не устраивает ниже(скрин сделал)

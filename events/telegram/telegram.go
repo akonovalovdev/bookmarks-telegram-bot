@@ -1,6 +1,8 @@
 package telegram
 
 import (
+	"errors"
+
 	"github.com/akonovalovdev/server/storage"
 	"github.com/akonovalovdev/server/clients/telegram"
 	"github.com/akonovalovdev/server/lib/e"
@@ -72,87 +74,80 @@ func (p Processor) Fetch(limit int) ([]events.Event, error) {
 
 //Метод будет выполнять различные действия в зависимости от типа эвента
 func (p Processor) Process(event events.Event) error {
-	/*
-	//сначала нужно получить все апдэйты(используя внутренний оффсет и лимит из аргумента)
-	updates, err := p.tg.Updates(p.offset, limit) 
-	if err != nil {
-		return nil, e.Wrap("can't get events", err)
-	}
-	//возвращаем нулевой результат, если апдейтов мы не нашли
-	if len(updates) == 0 {
-		return nil, nil
-	}
-	*/
-
 	//будет всего 2 возможных кейса(если в будущем придётся работать с другими апдэйтами телеги, добавим другой кейс)
 	switch event.Type {
 	case event.Message: //работаем с сообщением
-		p.Processmessage(event) //выносим всю логику работы с сообщением в отдельную функцию принимающую на вход Event
+		return p.Processmessage(event) //выносим всю логику работы с сообщением в отдельную функцию принимающую на вход Event
 	default: //когда не знаем с чем работаем
 		return e.Wrap("can't process message", ErrUnknownEventType)
 	}
+}
 
-	func (p Processor) processMessage(event events.Event) error {
-		//для работы с этим методом необходимо получить meta
-		meta, err := meta(event) //процесс получения meta выносим в отдельную функцию
-		if err != nil {
-			return e.Wrap("can't process message", err)
-		}
-
-		//в зависисмости от типа сообщения выбираем определённое действие с ним
-		//если пользователь скинул ссылку - сохраняем её
-		//если пользователь отправил копанду RND - то мы должны найти ссылку из сохранённых и вернуть ему
-		//если пользователь отправит нам команду help - мы должны ему отправить краткую справку по боту
-		//все эти группы действий назовём - КОМАНДАМИ(comands) и весь код, который будет к нему относиться, вынесем в отдельны файл
+func (p Processor) processMessage(event events.Event) error {
+	//для работы с этим методом необходимо получить meta
+	meta, err := meta(event) //процесс получения meta выносим в отдельную функцию
+	if err != nil {
+		return e.Wrap("can't process message", err)
 	}
+
+	//в зависисмости от типа сообщения выбираем определённое действие с ним
+	//если пользователь скинул ссылку - сохраняем её
+	//если пользователь отправил копанду RND - то мы должны найти ссылку из сохранённых и вернуть ему
+	//если пользователь отправит нам команду help - мы должны ему отправить краткую справку по боту
+	//все эти группы действий назовём - КОМАНДАМИ(comands) и весь код, который будет к нему относиться, вынесем в отдельны файл
+	//вызываем функцию-роутер
+	if err := p.DoCmd(event.Text, meta.chatID, meta.Username); err != nil {
+		return e.Wrap(e.Wrap("can't process massage", err))
+	}
+	return nil
+}
 
 	
-	func meta(event events.Event) (Meta, error) {
-		//делаем typeresepsion
-		res, ok := event.Meta.(Meta)
-		if !o{
-			return meta{}, e.Wrap("can't get meta", ErrUnknownMetaType)
-		}
-
-		return res, nil
-	}	
-
-
-	func event(upd telegram.Update) events.Event {
-		//выносим тип события в отдельную переменную
-		updType := fetchType(upd)
-				
-		res := events.Event{
-			//так же создаём 2 функции(для получения типа(Type) и текста(Text) соответственно)
-			Type: updType,
-			Text: fetchText(upd),
-		}
-		//нельзя просто так взять и добавить ещё 2 поля(username, id) из структуры Message типа Update, поскольку тип Event 
-		//является общим для всех возможных мессенджеров. далеко не факт что любому мессенджеру понадобятся эти 2 поля
-		//помещаем эти переменные в заранее подготовленную структуру Meta у данного пакета telegram
-		if updType == event.Message { //поскольку тип является Message, мы точно знаем что Message не нулевое
-			res.Meta = Meta{
-				ChatID: upd.Message.Chat.ID,
-				Username: upd.Message.From.Username,
-			}
-		}
-		return res
+func meta(event events.Event) (Meta, error) {
+	//делаем typeresepsion
+	res, ok := event.Meta.(Meta)
+	if !o{
+		return meta{}, e.Wrap("can't get meta", ErrUnknownMetaType)
 	}
 
-	func fetchText(upd telegram.Update) string {
-		//если полученное значение будет nil, то произойдёт паника, поэтому исключаем этот момент
-		if upd.Message == nil {
-			return ""
-		}
+	return res, nil
+}	
 
-		return upd.Message.Text
+
+func event(upd telegram.Update) events.Event {
+	//выносим тип события в отдельную переменную
+	updType := fetchType(upd)
+			
+	res := events.Event{
+		//так же создаём 2 функции(для получения типа(Type) и текста(Text) соответственно)
+		Type: updType,
+		Text: fetchText(upd),
+	}
+	//нельзя просто так взять и добавить ещё 2 поля(username, id) из структуры Message типа Update, поскольку тип Event 
+	//является общим для всех возможных мессенджеров. далеко не факт что любому мессенджеру понадобятся эти 2 поля
+	//помещаем эти переменные в заранее подготовленную структуру Meta у данного пакета telegram
+	if updType == event.Message { //поскольку тип является Message, мы точно знаем что Message не нулевое
+		res.Meta = Meta{
+			ChatID: upd.Message.Chat.ID,
+			Username: upd.Message.From.Username,
+		}
+	}
+	return res
+}
+
+func fetchText(upd telegram.Update) string {
+	//если полученное значение будет nil, то произойдёт паника, поэтому исключаем этот момент
+	if upd.Message == nil {
+		return ""
 	}
 
-	func fetchType(upd telegram.Update) events.Type {
-		//если полученное значение будет nil, то тип нам не известен и произойдёт паника, поэтому исключаем этот момент
-		if upd.Message == nil {
-			return events.Unknown
-		}
-		return events.Message
+	return upd.Message.Text
+}
+
+func fetchType(upd telegram.Update) events.Type {
+	//если полученное значение будет nil, то тип нам не известен и произойдёт паника, поэтому исключаем этот момент
+	if upd.Message == nil {
+		return events.Unknown
 	}
+	return events.Message
 }

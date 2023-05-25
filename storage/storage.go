@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"crypto/sha1"
+	"errors"
 
 	"github.com/akonovalovdev/server/lib/e"
 )
@@ -15,6 +16,9 @@ type Storage interface {  //storage-место хранения
 	Remove(p *Page) error
 	IsExists(p *Page) (bool, error) // существует ли та или иная страница(говорит либо да либо нет) и логическая ошибка если он не смог узнать будевой параметр
 }
+
+
+var ErrNoSavedPages = errors.New("no saved pages") // Специальная переменная ошибки, если файлов нет(пользователь пока ничего не сохранил)
 
 //основной тип данных с которым будут работать Storage(страница на которую ведёт ссылка, которую мы скинули боту)
 type Page struct { //page - страница

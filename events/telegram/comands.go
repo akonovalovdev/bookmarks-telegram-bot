@@ -13,7 +13,7 @@ const (
 	StartCmd = "/start"
 )
 
-//основной метод doCmd()/ что-то вроде API роутера(мы будем смотреть на текст сообщения и по его формату содержания
+//основной метод doCmd()/ что-то вроде API РОУТЕРА(мы будем смотреть на текст сообщения и по его формату содержания
 //будем понимать какая это команда)
 //каждую команду будет реализовывать отдельный метод типа процессор
 func (p *Processor) doCmd(text string, chatID int, username string) error {
@@ -31,20 +31,21 @@ func (p *Processor) doCmd(text string, chatID int, username string) error {
 	//для команды добавления страницы мы должны проверить, является ли сообщение ссылкой
 	if isAddCmd(text) {//проверку на ссылку выносим в отдельную функцию
 		//если проверка выполнилась, то мы имеем дело с командой TODO: AddPage()
+		return p.savePage(chatID, text, username)
 	}
 
 	switch text {
 	case RndCmd:
-
+		return p.sendRandom(chatID, username)  //команда воpвращения рандомной ссылки
 	case HelpCmd:
-
+		return p.sendHelp(chatID) //команда показать подсказку
 	case StartCmd:
-
+		return p.sendHelp(chatID) //команда приветствия
 	//дефолтный кейс, когда пользователь отправляет нам непонятно что(неизвестная команда или какой-то текст)
 	default:
-		//пишем что не понимаем пользователя
+		return p.tg.SendMessage(chatID, msgUnknownCommand) //пишем что не понимаем пользователя
 	}
-
+	return nil
 }
 
 //метод сохраненя страницы; В методе переменную text переименовываем pageURL(чтобы не конфликтовать с пакетом с именем URL)
@@ -80,6 +81,40 @@ func (p *Processor) savePage(chatID int, pageURL string, username string) (err e
 	if err := p.tg.SendMessage(chatID, msgSaved); err != nil {
 	}
 	return err
+}
+
+//метод SendRandom, который будет отправлять пользователю случайную статью
+func (p *Processor) sendRandom(chatID int, username string) (err error) {
+	defer func() { err = e.WrapIfErr("can't do command: can't send random", err) }()
+
+	//ищем случайную статью
+	page, err := p.storage.PickRandom(username) 
+	//обрабатываем обычную но не особую ошибки
+	if err != nil && !errors.Is(err, storage.ErrNoSavedPage){
+		return err
+	}
+	//обрабатываем особую ошибку на тот случай если нет сохраннёных ссылок
+	if errors.Is(err, storage.ErrNoSavedPage){
+		return p.tg.SendMessage(chatID, msgNoSavedPage)
+	}
+
+	//если же нам удалось что-то найти, то мы отправляем эту ссылку пользователю
+	if err := p.tg.SendMessage(chatID, page.URL); err != nil {
+		return err
+	}
+
+	//последний шаг. если нам удалось найти и отправить ссылку, то нам обязательно нужно её удалить
+	return p.storage.Remove(page) 
+}
+
+//метод отправки справки ???????????????????????????????????????????????????????????
+func (p *Processor) sendHelp(chatID int) error {
+	return p.tg.SendMessage(chatID, msgHelp)
+}
+
+//метод приветствия
+func (p *Processor) sendHello(chatID int) error {
+	return p.tg.SendMessage(chatID, msgHello)
 }
 
 //проверяем является ли текст - ссылкой(так как способов проверки много, создаём отдельную функци. чтобы в случае чего изменить способ)
