@@ -20,8 +20,11 @@ type Meta struct {
 	Username string
 }
 
-var ErrUnknownEventType = errors.New("unknown event type")
- 
+var (
+	 ErrUnknownEventType = errors.New("unknown event type")
+	 ErrUnknownMetaType = errors.New("unknown meta type")
+	)
+
 //функция которая создаёт тип процессор
 func New(client *telegramm.Client, storage storage.Storage) *Processor{
 	//offset у нас дефолтный, поэтому его не указываем
@@ -92,7 +95,27 @@ func (p Processor) Process(event events.Event) error {
 	func (p Processor) processMessage(event events.Event) error {
 		//для работы с этим методом необходимо получить meta
 		meta, err := meta(event) //процесс получения meta выносим в отдельную функцию
+		if err != nil {
+			return e.Wrap("can't process message", err)
+		}
+
+		//в зависисмости от типа сообщения выбираем определённое действие с ним
+		//если пользователь скинул ссылку - сохраняем её
+		//если пользователь отправил копанду RND - то мы должны найти ссылку из сохранённых и вернуть ему
+		//если пользователь отправит нам команду help - мы должны ему отправить краткую справку по боту
+		//все эти группы действий назовём - КОМАНДАМИ(comands) и весь код, который будет к нему относиться, вынесем в отдельны файл
 	}
+
+	
+	func meta(event events.Event) (Meta, error) {
+		//делаем typeresepsion
+		res, ok := event.Meta.(Meta)
+		if !o{
+			return meta{}, e.Wrap("can't get meta", ErrUnknownMetaType)
+		}
+
+		return res, nil
+	}	
 
 
 	func event(upd telegram.Update) events.Event {
