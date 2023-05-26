@@ -25,8 +25,8 @@ const (
 )
 
 //функция которая будет создавать клиент
-func New(host string, token string) Client {
-	return Client{
+func New(host string, token string) *Client {
+	return &Client{
 		host: host,
 		basePatch: newBasePath(token), //реализация базового пути скрыта в отдельную функцию, так как мало интересует пользователя
 		client: http.Client{}, // стандартный
