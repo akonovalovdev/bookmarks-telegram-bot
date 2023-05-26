@@ -2,6 +2,9 @@ package event_consumer
 // в данном файле будет прописана реализация интерфейса consumer
 
 import (
+	"log"
+	"time"
+
 	"github.com/akonovalovdev/server/events"
 )
 
@@ -38,7 +41,15 @@ func (c Consumer) Start() error {
 			continue
 		}
 		
+		//вызываем дополнительную функцию обработки событий HandleEvents, разгружающую данный метод
+		if err := c.handleEvents(gotEvents); err != nil {
+			//здесь напишем сообщение об ошибке в log
+			log.Print(err)
+
+			continue
+		}
 	}
+	return nil
 }
 
 // дополнительная функция для разгруски метода Start
