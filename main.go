@@ -16,6 +16,8 @@ const (
 	batchSize = 100
 )
 
+//токен 6143760943:AAEEJBrZPzkkSOh7ESj-RL6ms4ikFJF0cBI
+
 func main() {
 	//создаём телеграм клиент(клиент который общаяется с телеграмом): (тип Client и его методы реализованы в файле telegram.go в папке client)
 	// получает сообщения которые ему пишут и отправляет собственные
@@ -39,7 +41,7 @@ func main() {
 
 func mustToken() string {
 	token := flag.String(
-		"token-bot-token",
+		"tg-bot-token",
 		"",
 		"token for access to telegram bot",
 	)
