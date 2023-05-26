@@ -40,3 +40,21 @@ func (c Consumer) Start() error {
 		
 	}
 }
+
+// дополнительная функция для разгруски метода Start
+func (c *Consumer) handleEvents(events []events.Event) error {
+	//перебераем events(события)
+	for _, event := range events {
+		//здесь полезным будет написать небольшое сообщение в log о том что мы получили новое событие и готовы его обработать
+		log.Printf("got new events: %s", event.Text)
+
+		//для обработки событий у нас уже есть процессор. Программа если что-то не так пошло с одним из событий, то она просто пропускает его обработку
+		if err := c.processor.Process(event); err != nil {
+			log.Printf("can't handle event: %s", err.Error())
+		
+			continue
+		}
+
+	}
+	return nil
+}

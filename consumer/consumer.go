@@ -1,5 +1,5 @@
 package consumer
 
-type Consumer interface {
+type Consumer interface { // Consumer c англ - потребитель
 	Start() error
 }
