@@ -70,7 +70,7 @@ func (c *Client) Updates(offset int, limit int) (updates []Update, err error) {
 func (c *Client) SendMessage(chatId int, text string) error{
 	//подготавливаем параметры запроса
 	q := url.Values{}
-	q.Add("chatId", strconv.Itoa(chatId))
+	q.Add("chat_id", strconv.Itoa(chatId))
 	q.Add("text", text)
 
 	//выполняем запрос, тело ответа нам не понадобится + передаём параметры

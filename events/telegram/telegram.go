@@ -43,7 +43,7 @@ func New(client *telegram.Client, storage storage.Storage) *Processor{
 _________________________________________________________________________________________*/
 
 //метод интерфейса фетчер, извлекать
-func (p Processor) Fetch(limit int) ([]events.Event, error) {
+func (p *Processor) Fetch(limit int) ([]events.Event, error) {
 	//сначала нужно получить все апдэйты(используя внутренний оффсет и лимит из аргумента)
 	updates, err := p.tg.Updates(p.offset, limit) 
 	if err != nil {
