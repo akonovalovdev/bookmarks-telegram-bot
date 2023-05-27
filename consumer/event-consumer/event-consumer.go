@@ -1,4 +1,5 @@
 package event_consumer
+
 // в данном файле будет прописана реализация интерфейса consumer
 
 import (
@@ -8,39 +9,39 @@ import (
 	"github.com/akonovalovdev/server/events"
 )
 
-//основной тип
+// основной тип
 type Consumer struct {
-	fetcher events.Fetcher
+	fetcher   events.Fetcher
 	processor events.Processor
-	batchSize int //размер пачки - говорит нам о том сколько событий мы можем обрабатывать за раз
+	batchSize int // Размер пачки - говорит нам о том сколько событий мы можем обрабатывать за раз
 }
 
 func New(fetcher events.Fetcher, processor events.Processor, batchSize int) Consumer {
 	return Consumer{
-	fetcher: fetcher,
-	processor: processor,
-	batchSize: batchSize,
+		fetcher:   fetcher,
+		processor: processor,
+		batchSize: batchSize,
 	}
 }
 
-//реализация метода start
+// реализация метода start
 func (c Consumer) Start() error {
 	//здесь будет вечный цикл, который будет постоянно ждать новые события и обрабатывать их
-	for{
+	for {
 		gotEvents, err := c.fetcher.Fetch(c.batchSize)
 		if err != nil {
 			log.Printf("[ERR] consumer: %s", err.Error())
-		
+
 			continue
 		}
 
-		//проверяем сколько событий нам удалось получитьж  и если оказалось что их 0 то мы так же пропускаем итерацию
-		if len(gotEvents) == 0{
+		//проверяем сколько событий нам удалось получить и если оказалось что их 0 то мы так же пропускаем итерацию
+		if len(gotEvents) == 0 {
 			time.Sleep(1 * time.Second)
 
 			continue
 		}
-		
+
 		//вызываем дополнительную функцию обработки событий HandleEvents, разгружающую данный метод
 		if err := c.handleEvents(gotEvents); err != nil {
 			//здесь напишем сообщение об ошибке в log
@@ -49,12 +50,11 @@ func (c Consumer) Start() error {
 			continue
 		}
 	}
-	return nil
 }
 
-// дополнительная функция для разгруски метода Start
+// Дополнительная функция для разгрузки метода Start
 func (c *Consumer) handleEvents(events []events.Event) error {
-	//перебераем events(события)
+	//перебираем events(события)
 	for _, event := range events {
 		//здесь полезным будет написать небольшое сообщение в log о том что мы получили новое событие и готовы его обработать
 		log.Printf("got new events: %s", event.Text)
@@ -62,7 +62,7 @@ func (c *Consumer) handleEvents(events []events.Event) error {
 		//для обработки событий у нас уже есть процессор. Программа если что-то не так пошло с одним из событий, то она просто пропускает его обработку
 		if err := c.processor.Process(event); err != nil {
 			log.Printf("can't handle event: %s", err.Error())
-		
+
 			continue
 		}
 
