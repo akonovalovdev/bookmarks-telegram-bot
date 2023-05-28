@@ -14,6 +14,7 @@ type Consumer struct {
 	fetcher   events.Fetcher
 	processor events.Processor
 	batchSize int // Размер пачки - говорит нам о том сколько событий мы можем обрабатывать за раз
+	done      chan struct{}
 }
 
 func New(fetcher events.Fetcher, processor events.Processor, batchSize int) *Consumer {
@@ -21,17 +22,27 @@ func New(fetcher events.Fetcher, processor events.Processor, batchSize int) *Con
 		fetcher:   fetcher,
 		processor: processor,
 		batchSize: batchSize,
+		done:      make(chan struct{}),
 	}
 }
 
 // реализация метода start
-func (c *Consumer) Start() error {
+func (c *Consumer) Start() {
 	updatesChan := make(chan events.Event, c.batchSize)
 	for i := 0; i < 10; i++ {
 		go c.handleEvents(updatesChan)
 	}
 	//здесь будет вечный цикл, который будет постоянно ждать новые события и обрабатывать их
 	for {
+
+		select {
+		case <-c.done: //тут пишем условие если основная программа убита, тогда убиваем это горутину
+			log.Printf("consumer finished")
+			close(updatesChan)
+			return
+		default:
+			// Ничего не делать
+		}
 		gotEvents, err := c.fetcher.Fetch(c.batchSize)
 		if err != nil {
 			log.Printf("[ERR] consumer: %s", err.Error())
@@ -46,12 +57,15 @@ func (c *Consumer) Start() error {
 			continue
 		}
 
-		go func() {
-			for _, e := range gotEvents {
-				updatesChan <- e
-			}
-		}()
+		for _, e := range gotEvents {
+			updatesChan <- e
+		}
 	}
+}
+
+func (c *Consumer) Stop() {
+	close(c.done)
+
 }
 
 // Дополнительная функция для разгрузки метода Start

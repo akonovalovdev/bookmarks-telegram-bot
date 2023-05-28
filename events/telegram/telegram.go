@@ -103,7 +103,7 @@ func (p Processor) processMessage(event events.Event) error {
 }
 
 func meta(event events.Event) (Meta, error) {
-	//делаем typeresepsion
+	//делаем type assertion
 	res, ok := event.Meta.(Meta)
 	if !ok {
 		return Meta{}, e.Wrap("can't get meta", ErrUnknownMetaType)

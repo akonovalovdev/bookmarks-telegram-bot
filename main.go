@@ -3,6 +3,9 @@ package main
 import (
 	"flag"
 	"log"
+	"os"
+	"os/signal"
+	"syscall"
 
 	tgClient "github.com/akonovalovdev/server/clients/telegram"
 	"github.com/akonovalovdev/server/consumer/event-consumer"
@@ -33,9 +36,17 @@ func main() {
 	//запускаем консьюмер consumer.Start(fetcher, processor)
 	consumer := event_consumer.New(eventsProcessor, eventsProcessor, batchSize)
 
-	if err := consumer.Start(); err != nil {
-		log.Fatal("service is stopped", err) // записываем в лог сообщение об ошибке и останавливаем программу
-	}
+	go func() {
+		sig := []os.Signal{syscall.SIGTERM, syscall.SIGINT, os.Interrupt}
+		sigChan := make(chan os.Signal, 1)
+		signal.Notify(sigChan, sig...)
+		defer signal.Reset(sig...)
+		<-sigChan
+		log.Printf("Program critical stop")
+		consumer.Stop()
+	}()
+
+	consumer.Start()
 }
 
 func mustToken() string {
