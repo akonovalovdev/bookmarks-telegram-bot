@@ -16,8 +16,8 @@ type Consumer struct {
 	batchSize int // Размер пачки - говорит нам о том сколько событий мы можем обрабатывать за раз
 }
 
-func New(fetcher events.Fetcher, processor events.Processor, batchSize int) Consumer {
-	return Consumer{
+func New(fetcher events.Fetcher, processor events.Processor, batchSize int) *Consumer {
+	return &Consumer{
 		fetcher:   fetcher,
 		processor: processor,
 		batchSize: batchSize,
@@ -25,7 +25,11 @@ func New(fetcher events.Fetcher, processor events.Processor, batchSize int) Cons
 }
 
 // реализация метода start
-func (c Consumer) Start() error {
+func (c *Consumer) Start() error {
+	updatesChan := make(chan events.Event, c.batchSize)
+	for i := 0; i < 10; i++ {
+		go c.handleEvents(updatesChan)
+	}
 	//здесь будет вечный цикл, который будет постоянно ждать новые события и обрабатывать их
 	for {
 		gotEvents, err := c.fetcher.Fetch(c.batchSize)
@@ -42,20 +46,18 @@ func (c Consumer) Start() error {
 			continue
 		}
 
-		//вызываем дополнительную функцию обработки событий HandleEvents, разгружающую данный метод
-		if err := c.handleEvents(gotEvents); err != nil {
-			//здесь напишем сообщение об ошибке в log
-			log.Print(err)
-
-			continue
-		}
+		go func() {
+			for _, e := range gotEvents {
+				updatesChan <- e
+			}
+		}()
 	}
 }
 
 // Дополнительная функция для разгрузки метода Start
-func (c *Consumer) handleEvents(events []events.Event) error {
+func (c *Consumer) handleEvents(evnts <-chan events.Event) {
 	//перебираем events(события)
-	for _, event := range events {
+	for event := range evnts {
 		//здесь полезным будет написать небольшое сообщение в log о том что мы получили новое событие и готовы его обработать
 		log.Printf("got new events: %s", event.Text)
 
@@ -67,5 +69,5 @@ func (c *Consumer) handleEvents(events []events.Event) error {
 		}
 
 	}
-	return nil
+
 }
