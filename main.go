@@ -13,6 +13,8 @@ import (
 	"github.com/akonovalovdev/server/storage/files"
 )
 
+// read_adviser_akonovalovdev_bot
+
 const (
 	tgBotHost   = "api.telegram.org"
 	storagePath = "files_storage"
@@ -23,7 +25,6 @@ func main() {
 	//создаём телеграм клиент(клиент который общаяется с телеграмом):
 	//(тип Client и его методы реализованы в файле telegram.go в папке client)
 	// получает сообщения которые ему пишут и отправляет собственные
-	//tgClient = telegram.New(tgBotHost, mustToken())
 
 	//создаём объект реализующий интерфейсы Processor и Fetcher
 	eventsProcessor := telegram.New(
@@ -31,7 +32,7 @@ func main() {
 		files.New(storagePath),
 	)
 
-	log.Print("service started") //?????????????????????? для чего сообщения передаются через log (6й урок 10я минута)
+	log.Print("service started")
 
 	//запускаем консьюмер consumer.Start(fetcher, processor)
 	consumer := event_consumer.New(eventsProcessor, eventsProcessor, batchSize)
